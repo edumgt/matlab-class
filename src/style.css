@@ -60,8 +60,19 @@ body {
   font-size: 1.45rem;
 }
 
+.section-label {
+  margin-top: 32px;
+  margin-bottom: 12px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  padding-left: 4px;
+  border-left: 4px solid #3b82f6;
+  padding-left: 10px;
+}
+
 .chart-grid {
-  margin-top: 20px;
+  margin-top: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
