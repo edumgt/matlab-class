@@ -2,47 +2,53 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>Gumi PC방 이용료 Pie</title>
+  <title>Python 주가 추이 차트</title>
   <link rel="stylesheet" href="./vendor/apexcharts/dist/apexcharts.css" />
   <script src="./vendor/apexcharts/dist/apexcharts.js"></script>
 </head>
 <body>
-  <h2 style="text-align:center;">🥧 구미 PC방 이용료 Pie 차트</h2>
+  <h2 style="text-align:center;">📈 Python 백엔드 주가 추이 차트</h2>
   <div id="chart"></div>
 
   <script>
-    fetch(`http://localhost:3000/api/gumi`) 
-      .then(res => res.json())
-      .then(json => {
-        const data = json;
-
-        // Pie Chart 데이터 변환
-        const seriesData = data.map(item => item.pc);     // 가격 배열
-        const labelsData = data.map(item => item.se);     // 행정구역 배열
+    fetch("http://localhost:8000/api/stocks")
+      .then((res) => res.json())
+      .then((json) => {
+        const series = json.stocks.map((stock) => ({
+          name: stock.name,
+          data: stock.close
+        }));
 
         const options = {
           chart: {
-            type: "pie",
-            height: 400
+            type: "line",
+            height: 420
           },
-          series: seriesData,
-          labels: labelsData,
-          tooltip: {
-            y: {
-              formatter: function(value, { seriesIndex }) {
-                const item = data[seriesIndex];
-                return `${item.prdlst_nm} : ${value.toLocaleString()}원<br/>기준일: ${item.date_stdde}`;
-              }
+          series,
+          xaxis: {
+            categories: json.dates,
+            title: { text: "거래일" }
+          },
+          yaxis: {
+            title: { text: "종가 (KRW)" },
+            labels: {
+              formatter: (value) => Number(value).toLocaleString()
             }
           },
-          colors: ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#6366F1", "#EC4899", "#14B8A6"]
+          tooltip: {
+            y: {
+              formatter: (value) => `${Number(value).toLocaleString()}원`
+            }
+          },
+          colors: ["#2563EB", "#10B981", "#F97316", "#EF4444"]
         };
 
-        const chart = new ApexCharts(document.querySelector("#chart"), options);
-        chart.render();
+        new ApexCharts(document.querySelector("#chart"), options).render();
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("데이터 로드 실패:", err);
+        document.getElementById("chart").innerHTML =
+          "<p style='color:red; text-align:center'>Python 백엔드에서 주가 데이터를 불러오지 못했습니다.</p>";
       });
   </script>
 </body>
