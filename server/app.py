@@ -6,6 +6,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -23,6 +24,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.mount("/assets", StaticFiles(directory=DIST_DIR / "assets", check_dir=False), name="assets")
 
 
 def load_stock_data() -> dict:
@@ -48,10 +50,6 @@ async def get_stocks() -> dict:
 @app.get("/{full_path:path}", include_in_schema=False)
 async def serve_frontend(full_path: str):
     if DIST_DIR.is_dir():
-        requested_path = DIST_DIR / full_path if full_path else DIST_DIR / "index.html"
-        if full_path and requested_path.is_file():
-            return FileResponse(requested_path)
-
         index_file = DIST_DIR / "index.html"
         if index_file.is_file():
             return FileResponse(index_file)
