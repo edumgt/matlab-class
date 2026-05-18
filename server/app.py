@@ -1,74 +1,69 @@
 import json
-from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import os
 from pathlib import Path
+
+import uvicorn
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 
 BASE_DIR = Path(__file__).resolve().parent
+PROJECT_DIR = BASE_DIR.parent
 DATA_FILE = BASE_DIR / "data" / "stocks.json"
+DIST_DIR = PROJECT_DIR / "dist"
 HOST = "0.0.0.0"
-PORT = 8000
+PORT = int(os.getenv("PORT", "8000"))
+
+app = FastAPI(title="Python Stock Backend")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def load_stock_data() -> dict:
-    with DATA_FILE.open("r", encoding="utf-8") as file:
-        return json.load(file)
+    try:
+        with DATA_FILE.open("r", encoding="utf-8") as file:
+            return json.load(file)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=500, detail="stock data file not found") from exc
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail="stock data file is invalid") from exc
 
 
-class StockRequestHandler(BaseHTTPRequestHandler):
-    server_version = "PythonStockBackend/1.0"
+@app.get("/api/health")
+async def health_check() -> dict[str, str]:
+    return {"status": "ok"}
 
-    def _send_json(self, payload: dict, status: HTTPStatus = HTTPStatus.OK) -> None:
-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.end_headers()
-        self.wfile.write(body)
 
-    def do_OPTIONS(self) -> None:
-        self.send_response(HTTPStatus.NO_CONTENT)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.end_headers()
+@app.get("/api/stocks")
+async def get_stocks() -> dict:
+    return load_stock_data()
 
-    def do_GET(self) -> None:
-        if self.path == "/api/stocks":
-            try:
-                self._send_json(load_stock_data())
-            except FileNotFoundError:
-                self._send_json(
-                    {"error": "stock data file not found"},
-                    HTTPStatus.INTERNAL_SERVER_ERROR,
-                )
-            except json.JSONDecodeError:
-                self._send_json(
-                    {"error": "stock data file is invalid"},
-                    HTTPStatus.INTERNAL_SERVER_ERROR,
-                )
-            return
 
-        if self.path == "/api/health":
-            self._send_json({"status": "ok"})
-            return
+@app.get("/{full_path:path}", include_in_schema=False)
+async def serve_frontend(full_path: str):
+    if DIST_DIR.is_dir():
+        requested_path = DIST_DIR / full_path if full_path else DIST_DIR / "index.html"
+        if full_path and requested_path.is_file():
+            return FileResponse(requested_path)
 
-        self._send_json(
-            {
-                "message": "Python stock analysis backend",
-                "endpoints": ["/api/health", "/api/stocks"],
-            },
-            HTTPStatus.OK,
-        )
+        index_file = DIST_DIR / "index.html"
+        if index_file.is_file():
+            return FileResponse(index_file)
+
+    return {
+        "message": "Python stock analysis backend",
+        "endpoints": ["/api/health", "/api/stocks"],
+    }
 
 
 def main() -> None:
-    with ThreadingHTTPServer((HOST, PORT), StockRequestHandler) as server:
-        print(f"🚀 Python stock backend running on http://{HOST}:{PORT}")
-        server.serve_forever()
+    uvicorn.run("server.app:app", host=HOST, port=PORT)
 
 
 if __name__ == "__main__":
