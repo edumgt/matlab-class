@@ -8,7 +8,7 @@ Python 백엔드가 제공하는 주가 분석 데이터를 Vite + ApexCharts �
 ## 구성
 
 - **frontend**: Vite + TypeScript + ApexCharts
-- **backend**: Python 표준 라이브러리 HTTP 서버
+- **backend**: FastAPI + Uvicorn
 - **analysis data**: 국내 대표 종목의 종가, 거래량, 섹터 수익률, 포트폴리오 비중
 
 ---
@@ -41,8 +41,9 @@ Python 백엔드는 `/home/runner/work/matlab-class/matlab-class/server/app.py` 
 ### 실행
 
 ```bash
-cd /home/runner/work/matlab-class/matlab-class/server
-python app.py
+cd /home/runner/work/matlab-class/matlab-class
+python -m pip install -r requirements.txt
+uvicorn server.app:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### 엔드포인트
@@ -107,6 +108,18 @@ npm run build
 
 ## 기술 메모
 
-- Python 표준 라이브러리만 사용해서 별도 백엔드 의존성이 없습니다.
+- FastAPI + Uvicorn 기반으로 API와 정적 프론트엔드를 함께 서비스할 수 있습니다.
 - CORS 허용이 포함되어 있어 Vite 개발 서버에서 바로 조회할 수 있습니다.
 - 주가 데이터 구조를 바꾸면 대시보드 차트도 함께 갱신됩니다.
+
+---
+
+## Docker 실행
+
+```bash
+cd /home/runner/work/matlab-class/matlab-class
+docker build -t matlab-class .
+docker run --rm -p 8000:8000 matlab-class
+```
+
+컨테이너는 Vite로 빌드한 프론트엔드와 FastAPI 백엔드를 함께 실행합니다.
