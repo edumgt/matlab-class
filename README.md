@@ -199,3 +199,12 @@ docker compose up -d --build
 ## Footer
 
 모든 화면 하단에 `(주)에듀엠지티 · www.edumgt.co.kr` 이 표시됩니다.
+
+테스트용 로그인 계정입니다 (Keycloak realm integrated-id에 등록되어 있음):
+
+아이디	비밀번호	비고
+demo-user	demo1234	일반 사용자
+demo-user2	demo2234	일반 사용자
+demo-user3	demo3234	일반 사용자
+admin-user	admin1234	realm role admin 보유
+이 중 demo-user / demo1234로 실제 로그인 → KOSPI/제조 분석 화면까지 여러 차례 검증했습니다.
