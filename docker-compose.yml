@@ -1,0 +1,40 @@
+# 실행 전: 기존 인프라(Keycloak 등)가 떠 있는 shared-net 네트워크가 필요합니다.
+# (예: /home/ubuntu/edumgt-lab-init/infra 에서 `docker compose up -d` 로 이미 생성됨)
+#
+# 실행: docker compose up -d --build
+# FE : http://localhost:18080
+# BE : http://localhost:18000
+
+services:
+  backend:
+    build:
+      context: ./app
+      dockerfile: server/Dockerfile
+    container_name: matlab-class-backend
+    restart: unless-stopped
+    environment:
+      KEYCLOAK_BASE_URL: http://keycloak:8080
+      KEYCLOAK_REALM: integrated-id
+      KEYCLOAK_CLIENT_ID: be-client
+      KEYCLOAK_CLIENT_SECRET: be-client-secret
+    ports:
+      - "18000:8000"
+    networks:
+      - shared-net
+
+  frontend:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE: http://localhost:18000
+    container_name: matlab-class-frontend
+    restart: unless-stopped
+    ports:
+      - "18080:80"
+    depends_on:
+      - backend
+
+networks:
+  shared-net:
+    external: true
